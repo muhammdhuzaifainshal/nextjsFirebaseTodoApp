@@ -17,6 +17,9 @@ const auth = getAuth(firebase_app);
   const [userId,setUserId] = useState('')
   const [todoArray,setTodoArray] = useState([])
   const [loading,setLoading] = useState(true);
+  const [modifyy,setModify] = useState(false)
+  const [modificationIndex, setModificationIndex] = useState();
+  const [modificationValue,setModificationValue] = useState('');
 
   useEffect(() => {
     // if (!auth.currentUser) router.push("/signin")
@@ -56,6 +59,7 @@ const auth = getAuth(firebase_app);
     setTodoArray([...arrayTemp])
     console.log(todoArray);
     setLoading(false) 
+    setToAdd('')
   }
 
 
@@ -77,23 +81,58 @@ const auth = getAuth(firebase_app);
     setLoading(false) 
   }
 
+  const modify = (index,name)=>{
+    setModify(true);
+    setModificationIndex(index);
+    setModificationValue(name)
+  }
+
+  const handleModification = async (e)=>{
+    e.preventDefault()
+    setLoading(true)
+    var arrayTemp = todoArray;
+    arrayTemp[modificationIndex] = {name:modificationValue};
+    const {result,error} = await addData('todos',`${userId}`,{tasks:arrayTemp});
+    if(error){
+      return
+    }
+    setTodoArray([...arrayTemp])
+    console.log(todoArray);
+    setLoading(false) 
+    setModify(false)
+  }
+
   return (
   <div className="container mx-auto w-full flex flex-col items-center justify-start mt-1">
     <div className="flex flex-col items-end justify-center px-2 w-full">
       <button className="bg-black text-white p-1 w-20" onClick={logOut}>Logout</button>
     </div>
+    {modifyy ? 
+    <div>
+      <form onSubmit={handleModification} className="mt-5">
+      <input type="text" placeholder="Enter a new todo" className="border-2 border-black border-solid p-2" onChange={(e)=>setModificationValue(e.target.value)} value={modificationValue}/>
+      <button type="submit" className="bg-black text-white p-3 w-24 mt-3">Modify</button>
+    </form>
+    </div> 
+    : 
+    <>
     <form onSubmit={handleSubmit} className="mt-5">
       <input type="text" placeholder="Enter a new todo" className="border-2 border-black border-solid p-2" onChange={(e)=>setToAdd(e.target.value)} value={toAdd}/>
       <button type="submit" className="bg-black text-white p-3 w-24 mt-3">Add Todo</button>
     </form>
     <div className="mt-5">
       {loading ? 'loading please wait..' : (todoArray && todoArray.length!==0 ? todoArray.map((each,index)=>(
-        <div key={index} className="border-2 border-solid border-black p-5 w-60 flex items-center justify-between">
+        <div key={index} className="border-2 border-solid border-black p-5 w-96 flex items-center justify-between">
           {each.name}
+          <div className="flex">
           <button className="bg-red text-white p-1 w-18" type="button" onClick={()=>deleteArray(index)}>Delete</button>
+          <button className="ms-1 bg-green text-black p-1 w-18" type="button" onClick={()=>modify(index,each.name)}>Modify</button>
+          </div>
         </div>
       )) : 'No data to show')}
     </div>
+      </>
+    }
   </div>
   );
 }
